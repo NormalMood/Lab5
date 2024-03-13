@@ -2,16 +2,18 @@
 #include <vector>
 #include <mpi.h>
 
-void printMatrix(const std::vector<std::vector<double>>& matrix) {
+using namespace std;
+
+void printMatrix(const vector<vector<double>>& matrix) {
     for (const auto& row : matrix) {
         for (double val : row) {
-            std::cout << val << " ";
+            cout << val << " ";
         }
-        std::cout << std::endl;
+        cout << endl;
     }
 }
 
-void gaussElimination(std::vector<std::vector<double>>& A, std::vector<double>& b, int n) {
+void gaussElimination(vector<vector<double>>& A, vector<double>& b, int n) {
     for (int i = 0; i < n; ++i) {
         int pivot_row = i;
         double max_val = abs(A[i][i]);
@@ -22,8 +24,8 @@ void gaussElimination(std::vector<std::vector<double>>& A, std::vector<double>& 
             }
         }
         if (pivot_row != i) {
-            std::swap(A[i], A[pivot_row]);
-            std::swap(b[i], b[pivot_row]);
+            swap(A[i], A[pivot_row]);
+            swap(b[i], b[pivot_row]);
         }
         for (int j = i + 1; j < n; ++j) {
             double ratio = A[j][i] / A[i][i];
@@ -50,8 +52,8 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     int n = 3; // Размерность СЛАУ
-    std::vector<std::vector<double>> A(n, std::vector<double>(n)); // Матрица коэффициентов
-    std::vector<double> b(n); // Вектор свободных членов
+    vector<vector<double>> A(n, vector<double>(n)); // Матрица коэффициентов
+    vector<double> b(n); // Вектор свободных членов
 
     if (rank == 0) {
         // Инициализация матрицы A и вектора b
@@ -70,14 +72,21 @@ int main(int argc, char* argv[]) {
         MPI_Recv(b.data(), n, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
+    cout<<"Matrix A:"<<endl;
+    printMatrix(A);
+
+    cout<<"array b:"<<endl;
+    for (int i = 0; i < b.size(); i++)
+        cout<<b[i]<<endl;
+
     gaussElimination(A, b, n);
 
     if (rank == 0) {
-        std::cout << "Solution: ";
+        cout << "Solution: ";
         for (double val : b) {
-            std::cout << val << " ";
+            cout << val << " ";
         }
-        std::cout << std::endl;
+        cout << endl;
     }
 
     MPI_Finalize();
