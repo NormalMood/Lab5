@@ -44,11 +44,43 @@ void gaussElimination(std::vector<std::vector<double>>& A, std::vector<double>& 
 }
 
 int main(int argc, char* argv[]) {
+    MPI_Init(&argc, &argv);
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     int n = 3; // Размерность СЛАУ
     std::vector<std::vector<double>> A(n, std::vector<double>(n)); // Матрица коэффициентов
     std::vector<double> b(n); // Вектор свободных членов
 
+    if (rank == 0) {
+        // Инициализация матрицы A и вектора b
+        // Пример инициализации:
+        A = {{2, -1, 1},
+             {3, 3, 9},
+             {3, 3, 5}};
+        b = {2, 15, 19};
+        // Распределение данных между процессами
+        for (int i = 1; i < size; ++i) {
+            MPI_Send(A[i].data(), n, MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+            MPI_Send(b.data(), n, MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+        }
+    } else {
+        MPI_Recv(A[rank].data(), n, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(b.data(), n, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+
+    gaussElimination(A, b, n);
+
+    if (rank == 0) {
+        std::cout << "Solution: ";
+        for (double val : b) {
+            std::cout << val << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    MPI_Finalize();
     return 0;
 }
 
